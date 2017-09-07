@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='sensor_response_curves',
-    version='0.2',
+    version='0.3',
     description='Sensor Response Curves for WV, S2, L8, L7',
     author='Jonas Solvsteen',
     author_email='josl@dhi-gras.com',

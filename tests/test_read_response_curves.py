@@ -4,7 +4,7 @@ import sensor_response_curves as srcurves
 def test_get_response_curves():
     for sensor in srcurves._supported_sensors:
         wv0, wv1, rcurves = srcurves.get_response_curves(
-                sensor, pan_only=False, bandkeys=None, bandids=None)
+                sensor, pan_only=False, bandkeys=None, band_ids=None)
         assert len(rcurves) > 1
 
 
