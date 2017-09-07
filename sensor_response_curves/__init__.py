@@ -93,7 +93,7 @@ def _check_supported_sensor(sensor):
     if sensor not in _supported_sensors:
         raise ValueError(
                 'Sensor \'{}\' is not supported. Choose from {}.'
-                ''.format(_supported_sensors))
+                ''.format(sensor, _supported_sensors))
 
 
 def _parse_csv(infile):
@@ -180,7 +180,7 @@ def get_data_standard_names(sensor):
 
 
 def get_response_curves(
-        sensor, pan_only=False, bandkeys=None, bandids=None):
+        sensor, pan_only=False, bandkeys=None, band_ids=None):
     """Read response curves for given sensor
 
     Parameters
@@ -193,7 +193,7 @@ def get_response_curves(
         list of bands to get curves for
         default: _default_bands for the
                  given sensor group
-    bandids : list of int, optional
+    band_ids : list of int, optional
         list of band numbers to get curves for
         default: as bandkeys
 
@@ -209,8 +209,8 @@ def get_response_curves(
     # collect bands specific for each sensor and start and end wavelenghts
     if bandkeys is not None:
         pass
-    elif bandids is not None:
-        bandkeys = [df.columns[i] for i in bandids]
+    elif band_ids is not None:
+        bandkeys = [df.columns[i] for i in band_ids]
     elif pan_only:
         bandkeys = ['pan']
     else:
