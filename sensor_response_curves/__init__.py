@@ -3,12 +3,12 @@ import os
 
 import pandas as pd
 import numpy as np
-import scipy.interpolate
 
-_here = os.path.abspath(os.path.dirname(__file__))
-_csvdir = os.path.join(_here, 'data')
+CSVDIR = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)),
+        'data')
 
-_sensor_groups = {
+SENSOR_GROUPS = {
         'WV2': 'WV',
         'WV3': 'WV',
         'PHR1A': 'PHR',
@@ -16,11 +16,12 @@ _sensor_groups = {
         'SPOT6': 'PHR',
         'L7': 'L7',
         'L8': 'L8',
-        'S2': 'S2'}
+        'S2A': 'S2',
+        'S2B': 'S2'}
 
-_supported_sensors = sorted(list(_sensor_groups))
+SUPPORTED_SENSORS = sorted(list(SENSOR_GROUPS))
 
-_cols_to_bands = {
+BANDS_TO_COLS = {
         'S2': {
             'wavelength': 'SR_WL',
             'coastal': 'SR_AV_B1',
@@ -49,8 +50,8 @@ _cols_to_bands = {
             'nir2': 'NIR2'},
         'PHR': {
             'wavelength': 'Wavelength',
-            'green': 'B1Blue',  # the order of Pleadis bands is like below (RGBN),
-            'blue': 'B2Green',  # not like indicated in the metadata file (BGRN)
+            'green': 'B2Green',
+            'blue': 'B1Blue',
             'red': 'B3Red',
             'nir1': 'B4NIR'},
         'L8': {
@@ -70,30 +71,32 @@ _cols_to_bands = {
             'nir2': 'L7B5NIR',
             'pan': 'L7B8Pan'}}
 
-_common_bands = ['red', 'green', 'blue', 'nir1']
+COLS_TO_BANDS = {sk: {v: k for k, v in BANDS_TO_COLS[sk].items()} for sk in BANDS_TO_COLS}
 
-_bands_to_cols = {sk: {v: k for k, v in _cols_to_bands[sk].items()} for sk in _cols_to_bands}
-
-_default_bands = {
+BAND_SEQUENCE = {
         'S2': [
             'coastal', 'blue', 'green', 'red',
-            'rededge', 'rededge2', 'rededge3', 'nir1', 'nir2'],
+            'rededge', 'rededge2', 'rededge3',
+            'nir1', 'nir2', 'nir3',
+            'swir1', 'swir2', 'swir3'],
         'WV': [
             'coastal', 'blue', 'green', 'yellow',
             'red', 'rededge', 'nir1', 'nir2'],
         'PHR': [
             'red', 'blue', 'green', 'nir1'],
-        'L8': [
-            'coastal', 'blue', 'green', 'red', 'nir1'],
         'L7': [
-            'blue', 'green', 'red', 'nir1']}
+            'blue', 'green', 'red', 'nir1'],
+            #'swir1', 'thermal', 'swir2', 'pan'],  # not defined in csv
+        'L8': [
+            'coastal', 'blue', 'green', 'red', 'nir1', 'pan']}
+            #'swir1', 'swir2', 'cirrus', 'thermal1', 'thermal2']}  # not defined in csv
 
 
 def _check_supported_sensor(sensor):
-    if sensor not in _supported_sensors:
+    if sensor not in SUPPORTED_SENSORS:
         raise ValueError(
                 'Sensor \'{}\' is not supported. Choose from {}.'
-                ''.format(sensor, _supported_sensors))
+                ''.format(sensor, SUPPORTED_SENSORS))
 
 
 def _parse_csv(infile):
@@ -101,9 +104,9 @@ def _parse_csv(infile):
 
 
 def _get_sensor_columns(df, sensor):
-    sensorgroup = _sensor_groups[sensor]
-    colmap = _bands_to_cols[sensorgroup]
-    colmap_inverse = _cols_to_bands[sensorgroup]
+    sensorgroup = SENSOR_GROUPS[sensor]
+    colmap = COLS_TO_BANDS[sensorgroup]
+    colmap_inverse = BANDS_TO_COLS[sensorgroup]
     df_renamed = df.rename(columns=colmap)
     if set(df_renamed.columns) != set(colmap_inverse):
         raise ValueError(
@@ -114,8 +117,8 @@ def _get_sensor_columns(df, sensor):
 
 
 def _get_default_bands(sensor):
-    sensorgroup = _sensor_groups[sensor]
-    bandkeys = _default_bands[sensorgroup]
+    sensorgroup = SENSOR_GROUPS[sensor]
+    bandkeys = BAND_SEQUENCE[sensorgroup]
     return bandkeys
 
 
@@ -128,12 +131,12 @@ def _get_csv_file(sensor):
 
     Parameters
     ----------
-    sensor : str in _supported_sensors
+    sensor : str in SUPPORTED_SENSORS
         sensor name
     """
     _check_supported_sensor(sensor)
     fname = sensor + '.txt'
-    csvfile = os.path.join(_csvdir, fname)
+    csvfile = os.path.join(CSVDIR, fname)
     if not os.path.isfile(csvfile):
         raise ValueError(
                 'CSV file missing from package: \'{}\'.'.format(csvfile))
@@ -145,7 +148,7 @@ def get_data_raw(sensor):
 
     Parameters
     ----------
-    sensor : str in _supported_sensors
+    sensor : str in SUPPORTED_SENSORS
         sensor name
 
     Returns
@@ -163,7 +166,7 @@ def get_data_standard_names(sensor):
 
     Parameters
     ----------
-    sensor : str in _supported_sensors
+    sensor : str in SUPPORTED_SENSORS
         sensor name
 
     Returns
@@ -185,13 +188,13 @@ def get_response_curves(
 
     Parameters
     ----------
-    sensor : str in _supported_sensors
+    sensor : str in SUPPORTED_SENSORS
         sensor name
     pan_only : bool
         whether to get pan band only
     bandkeys : list of str, optional
         list of bands to get curves for
-        default: _default_bands for the
+        default: BAND_SEQUENCE for the
                  given sensor group
     band_ids : list of int, optional
         list of band numbers to get curves for
@@ -199,42 +202,21 @@ def get_response_curves(
 
     Returns
     -------
-    float, float : wavelength start, wavelength end
-    ndarray : sensor response curve
+    wavelength : ndarray shape(nvals)
+        wavelength column
+    rcurves : ndarray shape(nvals, nbands)
+        sensor response curves for all (selected) bands
     """
     df = get_data_standard_names(sensor)
     wavelength = df['wavelength'].values
-    start_wv = wavelength[0]
-    end_wv = wavelength[-1]
     # collect bands specific for each sensor and start and end wavelenghts
     if bandkeys is not None:
         pass
     elif band_ids is not None:
-        bandkeys = [df.columns[i] for i in band_ids]
+        all_bands = _get_default_bands(sensor)
+        bandkeys = [all_bands[i] for i in band_ids]
     elif pan_only:
         bandkeys = ['pan']
     else:
         bandkeys = _get_default_bands(sensor)
-    return start_wv, end_wv, _get_columns(df, *bandkeys)
-
-
-def resample_response_curves(
-        rcurve, start_wv, end_wv, resolution, kind='slinear'):
-    """Resample the given response curve to specified spectral resolution
-
-    Parameters
-    ----------
-    rcurve : ndarray
-        sensor response curve
-    start_wv, end_wv : float
-        start and end wavelengths
-    resolution : float
-        resolution to interpolate to
-    kind : str
-        interpolation algorithm for
-        scipy.interpolate.interp1d
-    """
-    x = np.linspace(start_wv, end_wv, len(rcurve))
-    f = scipy.interpolate.interp1d(x, rcurve, kind=kind)
-    xnew = np.linspace(start_wv, end_wv, (end_wv-start_wv) // resolution + 1)
-    return f(xnew)
+    return wavelength, df[bandkeys].values.T
