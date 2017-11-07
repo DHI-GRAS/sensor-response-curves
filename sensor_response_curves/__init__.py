@@ -2,74 +2,82 @@ from __future__ import division
 import os
 
 import pandas as pd
-import numpy as np
 
 CSVDIR = os.path.join(
         os.path.abspath(os.path.dirname(__file__)),
         'data')
 
 SENSOR_GROUPS = {
-        'WV2': 'WV',
-        'WV3': 'WV',
-        'PHR1A': 'PHR',
-        'PHR1B': 'PHR',
-        'SPOT6': 'PHR',
-        'L7': 'L7',
-        'L8': 'L8',
-        'S2A': 'S2',
-        'S2B': 'S2'}
+    'WV2': 'WV',
+    'WV3': 'WV',
+    'WV4': 'WV_4band',
+    'GE1': 'WV_4band',
+    'PHR1A': 'PHR',
+    'PHR1B': 'PHR',
+    'SPOT6': 'PHR',
+    'L7': 'L7',
+    'L8': 'L8',
+    'S2A': 'S2',
+    'S2B': 'S2'}
 
 SUPPORTED_SENSORS = sorted(list(SENSOR_GROUPS))
 
 BANDS_TO_COLS = {
-        'S2': {
-            'wavelength': 'SR_WL',
-            'coastal': 'SR_AV_B1',
-            'blue': 'SR_AV_B2',
-            'green': 'SR_AV_B3',
-            'red': 'SR_AV_B4',
-            'rededge': 'SR_AV_B5',
-            'rededge2': 'SR_AV_B6',
-            'rededge3': 'SR_AV_B7',
-            'nir1': 'SR_AV_B8',
-            'nir2': 'SR_AV_B8A',
-            'nir3': 'SR_AV_B9',
-            'swir1': 'SR_AV_B10',
-            'swir2': 'SR_AV_B11',
-            'swir3': 'SR_AV_B12'},
-        'WV': {
-            'wavelength': 'Wavelength',
-            'pan': 'Panchromatic',
-            'coastal': 'Coastal',
-            'blue': 'Blue',
-            'green': 'Green',
-            'yellow': 'Yellow',
-            'red': 'Red',
-            'rededge': 'Red Edge',
-            'nir1': 'NIR1',
-            'nir2': 'NIR2'},
-        'PHR': {
-            'wavelength': 'Wavelength',
-            'green': 'B2Green',
-            'blue': 'B1Blue',
-            'red': 'B3Red',
-            'nir1': 'B4NIR'},
-        'L8': {
-            'wavelength': 'Wavelength',
-            'coastal': 'L8B1Coast',
-            'blue': 'L8B2Blue',
-            'green': 'L8B3Green',
-            'red': 'L8B4Red',
-            'nir1': 'L8B5NIR',
-            'pan': 'L8B8Pan'},
-        'L7': {
-            'wavelength': 'Wavelength',
-            'blue': 'L7B1Blue',
-            'green': 'L7B2Green',
-            'red': 'L7B3Red',
-            'nir1': 'L7B4NIR',
-            'nir2': 'L7B5NIR',
-            'pan': 'L7B8Pan'}}
+    'S2': {
+        'wavelength': 'SR_WL',
+        'coastal': 'SR_AV_B1',
+        'blue': 'SR_AV_B2',
+        'green': 'SR_AV_B3',
+        'red': 'SR_AV_B4',
+        'rededge': 'SR_AV_B5',
+        'rededge2': 'SR_AV_B6',
+        'rededge3': 'SR_AV_B7',
+        'nir1': 'SR_AV_B8',
+        'nir2': 'SR_AV_B8A',
+        'nir3': 'SR_AV_B9',
+        'swir1': 'SR_AV_B10',
+        'swir2': 'SR_AV_B11',
+        'swir3': 'SR_AV_B12'},
+    'WV': {
+        'wavelength': 'Wavelength',
+        'pan': 'Panchromatic',
+        'coastal': 'Coastal',
+        'blue': 'Blue',
+        'green': 'Green',
+        'yellow': 'Yellow',
+        'red': 'Red',
+        'rededge': 'Red Edge',
+        'nir1': 'NIR1',
+        'nir2': 'NIR2'},
+    'WV_4band': {
+        'wavelength': 'Wavelength',
+        'pan': 'PAN',
+        'blue': 'BLUE',
+        'green': 'GREEN',
+        'red': 'RED',
+        'nir1': 'NIR'},
+    'PHR': {
+        'wavelength': 'Wavelength',
+        'green': 'B2Green',
+        'blue': 'B1Blue',
+        'red': 'B3Red',
+        'nir1': 'B4NIR'},
+    'L8': {
+        'wavelength': 'Wavelength',
+        'coastal': 'L8B1Coast',
+        'blue': 'L8B2Blue',
+        'green': 'L8B3Green',
+        'red': 'L8B4Red',
+        'nir1': 'L8B5NIR',
+        'pan': 'L8B8Pan'},
+    'L7': {
+        'wavelength': 'Wavelength',
+        'blue': 'L7B1Blue',
+        'green': 'L7B2Green',
+        'red': 'L7B3Red',
+        'nir1': 'L7B4NIR',
+        'nir2': 'L7B5NIR',
+        'pan': 'L7B8Pan'}}
 
 COLS_TO_BANDS = {sk: {v: k for k, v in BANDS_TO_COLS[sk].items()} for sk in BANDS_TO_COLS}
 
@@ -82,6 +90,8 @@ BAND_SEQUENCE = {
         'WV': [
             'coastal', 'blue', 'green', 'yellow',
             'red', 'rededge', 'nir1', 'nir2'],
+        'WV_4band': [
+            'pan', 'blue', 'green', 'red', 'nir1'],
         'PHR': [
             'red', 'blue', 'green', 'nir1'],
         'L7': [
@@ -100,7 +110,7 @@ def _check_supported_sensor(sensor):
 
 
 def _parse_csv(infile):
-    return pd.read_csv(infile)
+    return pd.read_csv(infile, comment='#')
 
 
 def _get_sensor_columns(df, sensor):
