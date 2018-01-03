@@ -118,11 +118,12 @@ def _get_sensor_columns(df, sensor):
     colmap = COLS_TO_BANDS[sensorgroup]
     colmap_inverse = BANDS_TO_COLS[sensorgroup]
     df_renamed = df.rename(columns=colmap)
-    if set(df_renamed.columns) != set(colmap_inverse):
+    missing_cols = set(colmap_inverse) - set(df_renamed.columns)
+    if missing_cols:
+        leftover_cols = set(df_renamed.columns) - set(colmap_inverse)
         raise ValueError(
-                'Expecting to have renamed all existing columns. '
-                'But the result is {} and the set to rename was {}.'
-                ''.format(list(df_renamed.columns), list(colmap_inverse)))
+            'Missing data for {}. Columns left to rename: {}.'
+            .format(missing_cols, leftover_cols))
     return df_renamed
 
 
