@@ -1,1 +1,3 @@
 global-include *.txt
+include versioneer.py
+include sensor_response_curves/_version.py
