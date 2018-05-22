@@ -1,0 +1,7 @@
+{
+  "tests/test_csv_files.py::test_parse_csv_file": true,
+  "tests/test_get_data.py::test_get_data_raw": true,
+  "tests/test_get_data.py::test_get_data_standard_names": true,
+  "tests/test_read_response_curves.py::test_get_custom": true,
+  "tests/test_read_response_curves.py::test_get_pan": true
+}

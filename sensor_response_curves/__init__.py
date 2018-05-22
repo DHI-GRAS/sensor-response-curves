@@ -1,11 +1,11 @@
 from __future__ import division
 import os
 
-import pandas as pd
+import numpy as np
 
 CSVDIR = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)),
-        'data')
+    os.path.abspath(os.path.dirname(__file__)),
+    'data')
 
 SENSOR_GROUPS = {
     'WV2': 'WV',
@@ -46,7 +46,7 @@ BANDS_TO_COLS = {
         'green': 'Green',
         'yellow': 'Yellow',
         'red': 'Red',
-        'rededge': 'Red Edge',
+        'rededge': 'Red_Edge',
         'nir1': 'NIR1',
         'nir2': 'NIR2'},
     'WV_4band': {
@@ -82,59 +82,58 @@ BANDS_TO_COLS = {
 COLS_TO_BANDS = {sk: {v: k for k, v in BANDS_TO_COLS[sk].items()} for sk in BANDS_TO_COLS}
 
 BAND_SEQUENCE = {
-        'S2': [
-            'coastal', 'blue', 'green', 'red',
-            'rededge', 'rededge2', 'rededge3',
-            'nir1', 'nir2', 'nir3',
-            'swir1', 'swir2', 'swir3'],
-        'WV': [
-            'coastal', 'blue', 'green', 'yellow',
-            'red', 'rededge', 'nir1', 'nir2'],
-        'WV_4band': [
-            'pan', 'blue', 'green', 'red', 'nir1'],
-        'PHR': [
-            'red', 'blue', 'green', 'nir1'],
-        'L7': [
-            'blue', 'green', 'red', 'nir1'],
-            #'swir1', 'thermal', 'swir2', 'pan'],  # not defined in csv
-        'L8': [
-            'coastal', 'blue', 'green', 'red', 'nir1', 'pan']}
-            #'swir1', 'swir2', 'cirrus', 'thermal1', 'thermal2']}  # not defined in csv
+    'S2': [
+        'coastal', 'blue', 'green', 'red',
+        'rededge', 'rededge2', 'rededge3',
+        'nir1', 'nir2', 'nir3',
+        'swir1', 'swir2', 'swir3'],
+    'WV': [
+        'coastal', 'blue', 'green', 'yellow',
+        'red', 'rededge', 'nir1', 'nir2'],
+    'WV_4band': [
+        'pan', 'blue', 'green', 'red', 'nir1'],
+    'PHR': [
+        'red', 'blue', 'green', 'nir1'],
+    'L7': [
+        'blue', 'green', 'red', 'nir1'],
+    #'swir1', 'thermal', 'swir2', 'pan'],  # not defined in csv
+    'L8': [
+        'coastal', 'blue', 'green', 'red', 'nir1', 'pan']}
+#'swir1', 'swir2', 'cirrus', 'thermal1', 'thermal2']}  # not defined in csv
 
 
 def _check_supported_sensor(sensor):
     if sensor not in SUPPORTED_SENSORS:
         raise ValueError(
-                'Sensor \'{}\' is not supported. Choose from {}.'
-                ''.format(sensor, SUPPORTED_SENSORS))
+            'Sensor \'{}\' is not supported. Choose from {}.'
+            ''.format(sensor, SUPPORTED_SENSORS))
 
 
 def _parse_csv(infile):
-    return pd.read_csv(infile, comment='#')
+    return np.genfromtxt(infile, delimiter=',', names=True, dtype='float', comments='#')
 
 
-def _get_sensor_columns(df, sensor):
+def _rename_fields_inplace(a, name_map):
+    a.dtype.names = [name_map[name] for name in a.dtype.names]
+
+
+def _rename_sensor_fields(data, sensor):
     sensorgroup = SENSOR_GROUPS[sensor]
     colmap = COLS_TO_BANDS[sensorgroup]
     colmap_inverse = BANDS_TO_COLS[sensorgroup]
-    df_renamed = df.rename(columns=colmap)
-    missing_cols = set(colmap_inverse) - set(df_renamed.columns)
+    _rename_fields_inplace(data, colmap)
+    missing_cols = set(colmap_inverse) - set(data.dtype.names)
     if missing_cols:
-        leftover_cols = set(df_renamed.columns) - set(colmap_inverse)
+        leftover_cols = set(data.dtype.names) - set(colmap_inverse)
         raise ValueError(
             'Missing data for {}. Columns left to rename: {}.'
             .format(missing_cols, leftover_cols))
-    return df_renamed
 
 
 def _get_default_bands(sensor):
     sensorgroup = SENSOR_GROUPS[sensor]
     bandkeys = BAND_SEQUENCE[sensorgroup]
     return bandkeys
-
-
-def _get_columns(df, *colnames):
-    return [df[colname].values for colname in colnames]
 
 
 def _get_csv_file(sensor):
@@ -150,7 +149,7 @@ def _get_csv_file(sensor):
     csvfile = os.path.join(CSVDIR, fname)
     if not os.path.isfile(csvfile):
         raise ValueError(
-                'CSV file missing from package: \'{}\'.'.format(csvfile))
+            'CSV file missing from package: \'{}\'.'.format(csvfile))
     return csvfile
 
 
@@ -168,12 +167,11 @@ def get_data_raw(sensor):
     """
     _check_supported_sensor(sensor)
     infile = _get_csv_file(sensor)
-    df = _parse_csv(infile)
-    return df
+    return _parse_csv(infile)
 
 
 def get_data_standard_names(sensor):
-    """Get sensor response curve data for sensor with renamed columns
+    """Get sensor response curve data for sensor with renamed fields
 
     Parameters
     ----------
@@ -185,12 +183,12 @@ def get_data_standard_names(sensor):
     pandas.DataFrame : data with standard names
         column order corresponds to band order
     """
-    df = get_data_raw(sensor)
-    df_renamed = _get_sensor_columns(df, sensor)
-    if 'wavelength' not in df_renamed.columns:
+    data = get_data_raw(sensor)
+    _rename_sensor_fields(data, sensor)
+    if 'wavelength' not in data.dtype.names:
         raise RuntimeError(
                 'Renaming seems to have failed.')
-    return df_renamed
+    return data
 
 
 def get_response_curves(
@@ -218,8 +216,8 @@ def get_response_curves(
     rcurves : ndarray shape(nvals, nbands)
         sensor response curves for all (selected) bands
     """
-    df = get_data_standard_names(sensor)
-    wavelength = df['wavelength'].values
+    data = get_data_standard_names(sensor)
+    wavelength = data['wavelength']
     # collect bands specific for each sensor and start and end wavelenghts
     if bandkeys is not None:
         pass
@@ -230,4 +228,5 @@ def get_response_curves(
         bandkeys = ['pan']
     else:
         bandkeys = _get_default_bands(sensor)
-    return wavelength, df[bandkeys].values.T
+    data_stacked = np.vstack(data[name] for name in bandkeys)
+    return wavelength, data_stacked
