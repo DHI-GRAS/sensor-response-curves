@@ -1,6 +1,23 @@
 language: python
+
 python:
   - "2.7"
   - "3.6"
-install: "pip install --upgrade pip setuptools wheel && pip install --only-binary=numpy,scipy,pandas numpy scipy pandas"
-script: python -m pytest
+
+before_install:
+  - pip install --upgrade pip setuptools wheel
+  - pip install pytest codecov
+
+install:
+  - pip install --only-binary=numpy,scipy numpy scipy
+
+script:
+  - coverage run -m py.test -v
+
+after_success:
+  - codecov
+
+notifications:
+  email:
+    on_failure: change
+    on_success: change

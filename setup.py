@@ -8,4 +8,4 @@ setup(
     author_email='josl@dhigroup.com',
     packages=find_packages(),
     include_package_data=True,
-    install_requires=['pandas', 'scipy', 'numpy'])
+    install_requires=['scipy', 'numpy'])
