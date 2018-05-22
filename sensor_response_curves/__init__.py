@@ -3,6 +3,11 @@ import os
 
 import numpy as np
 
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
+
+
 CSVDIR = os.path.join(
     os.path.abspath(os.path.dirname(__file__)),
     'data')
@@ -230,7 +235,3 @@ def get_response_curves(
         bandkeys = _get_default_bands(sensor)
     data_stacked = np.vstack(data[name] for name in bandkeys)
     return wavelength, data_stacked
-
-from ._version import get_versions
-__version__ = get_versions()['version']
-del get_versions
