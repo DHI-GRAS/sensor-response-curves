@@ -9,8 +9,8 @@ del get_versions
 
 
 CSVDIR = os.path.join(
-    os.path.abspath(os.path.dirname(__file__)),
-    'data')
+    os.path.abspath(os.path.dirname(__file__)), 'data'
+)
 
 SENSOR_GROUPS = {
     'WV2': 'WV',
@@ -23,7 +23,8 @@ SENSOR_GROUPS = {
     'L7': 'L7',
     'L8': 'L8',
     'S2A': 'S2',
-    'S2B': 'S2'}
+    'S2B': 'S2'
+}
 
 SUPPORTED_SENSORS = sorted(list(SENSOR_GROUPS))
 
@@ -53,20 +54,31 @@ BANDS_TO_COLS = {
         'red': 'Red',
         'rededge': 'Red_Edge',
         'nir1': 'NIR1',
-        'nir2': 'NIR2'},
+        'nir2': 'NIR2',
+        'swir1': 'SWIR1',
+        'swir2': 'SWIR2',
+        'swir3': 'SWIR3',
+        'swir4': 'SWIR4',
+        'swir5': 'SWIR5',
+        'swir6': 'SWIR6',
+        'swir7': 'SWIR7',
+        'swir8': 'SWIR8',
+    },
     'WV_4band': {
         'wavelength': 'Wavelength',
         'pan': 'PAN',
         'blue': 'BLUE',
         'green': 'GREEN',
         'red': 'RED',
-        'nir1': 'NIR'},
+        'nir1': 'NIR'
+    },
     'PHR': {
         'wavelength': 'Wavelength',
         'green': 'B2Green',
         'blue': 'B1Blue',
         'red': 'B3Red',
-        'nir1': 'B4NIR'},
+        'nir1': 'B4NIR'
+    },
     'L8': {
         'wavelength': 'Wavelength',
         'coastal': 'L8B1Coast',
@@ -74,7 +86,8 @@ BANDS_TO_COLS = {
         'green': 'L8B3Green',
         'red': 'L8B4Red',
         'nir1': 'L8B5NIR',
-        'pan': 'L8B8Pan'},
+        'pan': 'L8B8Pan'
+    },
     'L7': {
         'wavelength': 'Wavelength',
         'blue': 'L7B1Blue',
@@ -82,7 +95,9 @@ BANDS_TO_COLS = {
         'red': 'L7B3Red',
         'nir1': 'L7B4NIR',
         'nir2': 'L7B5NIR',
-        'pan': 'L7B8Pan'}}
+        'pan': 'L7B8Pan'
+    }
+}
 
 COLS_TO_BANDS = {sk: {v: k for k, v in BANDS_TO_COLS[sk].items()} for sk in BANDS_TO_COLS}
 
@@ -91,20 +106,29 @@ BAND_SEQUENCE = {
         'coastal', 'blue', 'green', 'red',
         'rededge', 'rededge2', 'rededge3',
         'nir1', 'nir2', 'nir3',
-        'swir1', 'swir2', 'swir3'],
+        'swir1', 'swir2', 'swir3',
+    ],
     'WV': [
         'coastal', 'blue', 'green', 'yellow',
-        'red', 'rededge', 'nir1', 'nir2'],
+        'red', 'rededge', 'nir1', 'nir2',
+        'swir1', 'swir2', 'swir3', 'swir4',
+        'swir5', 'swir6', 'swir7', 'swir8',
+    ],
     'WV_4band': [
-        'pan', 'blue', 'green', 'red', 'nir1'],
+        'pan', 'blue', 'green', 'red', 'nir1',
+    ],
     'PHR': [
-        'red', 'blue', 'green', 'nir1'],
+        'red', 'blue', 'green', 'nir1',
+    ],
     'L7': [
-        'blue', 'green', 'red', 'nir1'],
-    #'swir1', 'thermal', 'swir2', 'pan'],  # not defined in csv
+        'blue', 'green', 'red', 'nir1',
+        # 'swir1', 'thermal', 'swir2', 'pan'],  # not defined in csv
+    ],
     'L8': [
-        'coastal', 'blue', 'green', 'red', 'nir1', 'pan']}
-#'swir1', 'swir2', 'cirrus', 'thermal1', 'thermal2']}  # not defined in csv
+        'coastal', 'blue', 'green', 'red', 'nir1', 'pan',
+        # 'swir1', 'swir2', 'cirrus', 'thermal1', 'thermal2']}  # not defined in csv
+    ]
+}
 
 
 def _check_supported_sensor(sensor):
@@ -119,20 +143,13 @@ def _parse_csv(infile):
 
 
 def _rename_fields_inplace(a, name_map):
-    a.dtype.names = [name_map[name] for name in a.dtype.names]
+    a.dtype.names = [name_map[name] for name in a.dtype.names if name in a.dtype.names]
 
 
 def _rename_sensor_fields(data, sensor):
     sensorgroup = SENSOR_GROUPS[sensor]
     colmap = COLS_TO_BANDS[sensorgroup]
-    colmap_inverse = BANDS_TO_COLS[sensorgroup]
     _rename_fields_inplace(data, colmap)
-    missing_cols = set(colmap_inverse) - set(data.dtype.names)
-    if missing_cols:
-        leftover_cols = set(data.dtype.names) - set(colmap_inverse)
-        raise ValueError(
-            'Missing data for {}. Columns left to rename: {}.'
-            .format(missing_cols, leftover_cols))
 
 
 def _get_default_bands(sensor):
@@ -233,5 +250,5 @@ def get_response_curves(
         bandkeys = ['pan']
     else:
         bandkeys = _get_default_bands(sensor)
-    data_stacked = np.vstack(data[name] for name in bandkeys)
+    data_stacked = np.vstack(data[name] for name in bandkeys if name in data.dtype.names)
     return wavelength, data_stacked
