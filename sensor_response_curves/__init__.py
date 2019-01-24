@@ -250,5 +250,9 @@ def get_response_curves(
         bandkeys = ['pan']
     else:
         bandkeys = _get_default_bands(sensor)
-    data_stacked = np.vstack(data[name] for name in bandkeys if name in data.dtype.names)
+    data_to_stack = []
+    for name in bandkeys:
+        if name in data.dtype.names:
+            data_to_stack.append(data[name])
+    data_stacked = np.vstack(data_to_stack)
     return wavelength, data_stacked
