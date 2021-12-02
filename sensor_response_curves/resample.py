@@ -30,6 +30,6 @@ def resample_response_curves(
             bounds_error=False, fill_value=0)
     start_wv = wavelength[0]
     end_wv = wavelength[-1]
-    nsteps = int((end_wv - start_wv) // resolution + 1)
+    nsteps = round((end_wv - start_wv) / resolution) + 1
     xnew = np.linspace(start_wv, end_wv, nsteps)
     return xnew, f(xnew)
