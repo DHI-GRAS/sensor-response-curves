@@ -20,6 +20,8 @@ SENSOR_GROUPS = {
     'PHR1A': 'PHR',
     'PHR1B': 'PHR',
     'SPOT6': 'PHR',
+    'PNEO3': 'PNEO',
+    'PNEO4': 'PNEO',
     'L7': 'L7',
     'L8': 'L8',
     'S2A': 'S2',
@@ -79,6 +81,16 @@ BANDS_TO_COLS = {
         'red': 'B3Red',
         'nir1': 'B4NIR'
     },
+    'PNEO': {
+        'wavelength': '\ufeffWavelength_nm',
+        'green': 'Green',
+        'blue': 'Blue',
+        'red': 'Red',
+        'coastal': 'Blue_Coastal',
+        'pan' : 'Pan',
+        'nir1' : 'NIR',
+        'rededge': 'Red_Edge'
+    },
     'L8': {
         'wavelength': 'Wavelength',
         'coastal': 'L8B1Coast',
@@ -119,6 +131,9 @@ BAND_SEQUENCE = {
     ],
     'PHR': [
         'red', 'blue', 'green', 'nir1',
+    ],
+    'PNEO': [
+        'red', 'blue', 'green', 'coastal','pan', 'nir1', 'rededge'
     ],
     'L7': [
         'blue', 'green', 'red', 'nir1',
